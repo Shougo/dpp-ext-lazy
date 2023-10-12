@@ -1,5 +1,5 @@
-import { Actions, BaseExt, Plugin } from "../dpp/types.ts";
-import { Denops } from "../dpp/deps.ts";
+import { Actions, BaseExt, Plugin } from "https://deno.land/x/dpp_vim@v0.0.3/types.ts";
+import { Denops } from "https://deno.land/x/dpp_vim@v0.0.3/deps.ts";
 
 type Params = Record<string, never>;
 
