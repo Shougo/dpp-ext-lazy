@@ -30,7 +30,22 @@ https://github.com/vim-denops/denops.vim
 
 ==============================================================================
 EXAMPLES                                               *dpp-ext-lazy-examples*
->
+>typescript
+	const [context, options] = await args.contextBuilder.get(args.denops);
+	
+	// Get plugins from other exts
+	const plugins = ...
+	
+	const stateLines = await args.dpp.extAction(
+	  args.denops,
+	  context,
+	  options,
+	  "lazy",
+	  "makeState",
+	  {
+	    plugins,
+	  },
+	) as string[];
 <
 
 ==============================================================================
