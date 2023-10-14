@@ -449,9 +449,9 @@ function dpp#ext#lazy#_generate_dummy_commands(plugin) abort
   for name in dpp#util#_convert2list(a:plugin->get('on_cmd', []))
     " Define dummy commands.
     let raw_cmd = 'command '
-          \ .. '-complete=custom,dpp#autoload#_dummy_complete'
+          \ .. '-complete=custom,dpp#ext#lazy#_dummy_complete'
           \ .. ' -bang -bar -range -nargs=* '. name
-          \ .. printf(" call dpp#autoload#_on_cmd(%s, %s, <q-args>,
+          \ .. printf(" call dpp#ext#lazy#_on_cmd(%s, %s, <q-args>,
           \  '<bang>'->expand(), '<line1>'->expand(), '<line2>'->expand())",
           \   name->string(), a:plugin.name->string())
 
@@ -483,7 +483,7 @@ function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
 
     for mapping in mappings
       " Define dummy mappings.
-      let prefix = printf('dpp#autoload#_on_map(%s, %s,',
+      let prefix = printf('dpp#ext#lazy#_on_map(%s, %s,',
             \ mapping->substitute('<', '<lt>', 'g')->string(),
             \ a:plugin.name->string())
       for mode in modes
