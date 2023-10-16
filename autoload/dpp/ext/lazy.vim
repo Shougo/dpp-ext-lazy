@@ -11,17 +11,22 @@ function dpp#ext#lazy#_on_default_event(event) abort
 
   for filetype in &l:filetype->split('\.')
     let plugins += lazy_plugins->copy()
-          \ ->filter({ _, val -> val->get('on_ft', [])
-          \ ->index(filetype) >= 0 })
+          \ ->filter({ _, val ->
+          \   dpp#util#_convert2list(val->get('on_ft', []))
+          \   ->index(filetype) >= 0
+          \ })
   endfor
 
   let plugins += lazy_plugins->copy()
-        \ ->filter({ _, val -> !(val->get('on_path', [])->copy()
-        \ ->filter({ _, val -> path =~? val })->empty()) })
+        \ ->filter({ _, val ->
+        \   !(dpp#util#_convert2list(val->get('on_path', []))->copy()
+        \   ->filter({ _, val -> path =~? val })->empty())
+        \ })
   let plugins += lazy_plugins->copy()
         \ ->filter({ _, val ->
         \   !(val->has_key('on_event')) && val->has_key('on_if')
-        \   && val.on_if->eval() })
+        \   && val.on_if->eval()
+        \ })
 
   call s:source_events(a:event, plugins)
 endfunction
@@ -35,7 +40,8 @@ function dpp#ext#lazy#_on_event(event, plugins) abort
 
   let plugins = lazy_plugins->copy()
         \ ->filter({ _, val ->
-        \          !(val->has_key('on_if')) || val.on_if->eval() })
+        \   !(val->has_key('on_if')) || val.on_if->eval()
+        \ })
   call s:source_events(a:event, plugins)
 endfunction
 function s:source_events(event, plugins) abort
@@ -76,9 +82,10 @@ function dpp#ext#lazy#_on_func(name) abort
 
   call dpp#source(dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
-        \          function_prefix->stridx(
+        \   function_prefix->stridx(
         \             dpp#util#_get_normalized_name(val).'#') == 0
-        \          || val->get('on_func', [])->index(a:name) >= 0 }))
+        \   || val->get('on_func', [])->index(a:name) >= 0
+        \ }))
 endfunction
 
 function dpp#ext#lazy#_on_lua(name) abort
@@ -94,18 +101,20 @@ function dpp#ext#lazy#_on_lua(name) abort
 
   call dpp#source(dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
-        \          val->get('on_lua', [])->index(mod_root) >= 0 }))
+        \   val->get('on_lua', [])->index(mod_root) >= 0
+        \ }))
 endfunction
 
 function dpp#ext#lazy#_on_pre_cmd(name) abort
   call dpp#source(
         \ dpp#util#_get_lazy_plugins()
         \  ->filter({ _, val -> copy(val->get('on_cmd', []))
-        \  ->map({ _, val2 -> tolower(val2) })
-        \  ->index(a:name) >= 0
-        \  || a:name->tolower()
-        \     ->stridx(dpp#util#_get_normalized_name(val)->tolower()
-        \     ->substitute('[_-]', '', 'g')) == 0 }))
+        \    ->map({ _, val2 -> tolower(val2) })
+        \    ->index(a:name) >= 0
+        \    || a:name->tolower()
+        \    ->stridx(dpp#util#_get_normalized_name(val)->tolower()
+        \    ->substitute('[_-]', '', 'g')) == 0
+        \  }))
 endfunction
 
 function dpp#ext#lazy#_on_cmd(command, name, args, bang, line1, line2) abort
@@ -257,6 +266,7 @@ endfunction
 function dpp#ext#lazy#_generate_on_lua(plugin) abort
   return dpp#util#_convert2list(a:plugin.on_lua)
         \ ->map({ _, val -> val->matchstr('^[^./]\+') })
-        \ ->map({ _, mod -> printf("let g:dpp#_on_lua_plugins[%s] = v:true",
-        \                          string(mod) )})
+        \ ->map({ _, mod ->
+        \   printf("let g:dpp#_on_lua_plugins[%s] = v:true", string(mod))
+        \ })
 endfunction
