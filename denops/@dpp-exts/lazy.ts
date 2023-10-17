@@ -82,7 +82,6 @@ export class Ext extends BaseExt<Params> {
           }
         }
 
-        console.log(stateLines);
         return stateLines;
       },
     },
