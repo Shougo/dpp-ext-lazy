@@ -2,8 +2,8 @@ import {
   Actions,
   BaseExt,
   Plugin,
-} from "https://deno.land/x/dpp_vim@v0.0.3/types.ts";
-import { Denops } from "https://deno.land/x/dpp_vim@v0.0.3/deps.ts";
+} from "https://deno.land/x/dpp_vim@v0.0.4/types.ts";
+import { Denops } from "https://deno.land/x/dpp_vim@v0.0.4/deps.ts";
 
 type Params = Record<string, never>;
 
@@ -75,7 +75,6 @@ export class Ext extends BaseExt<Params> {
           ) as dummyResult;
           if (dummyCommands.dummys.length > 0) {
             plugin.dummy_commands = dummyCommands.dummys;
-            console.log(plugin);
           }
           if (dummyCommands.stateLines.length > 0) {
             stateLines = stateLines.concat(dummyCommands.stateLines);

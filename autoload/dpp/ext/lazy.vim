@@ -118,6 +118,11 @@ function dpp#ext#lazy#_on_pre_cmd(name) abort
 endfunction
 
 function dpp#ext#lazy#_on_cmd(command, name, args, bang, line1, line2) abort
+  if (':' .. a:command)->exists() == 2
+    " Remove the dummy command.
+    silent! execute 'delcommand' a:command
+  endif
+
   call dpp#source(a:name)
 
   if (':' .. a:command)->exists() != 2
