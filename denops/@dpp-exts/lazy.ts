@@ -7,8 +7,13 @@ import { Denops } from "https://deno.land/x/dpp_vim@v0.0.3/deps.ts";
 
 type Params = Record<string, never>;
 
-type MakeStateArgs = {
+type LazyMakeStateArgs = {
   plugins: Plugin[];
+};
+
+type LazyMakeStateResult = {
+  plugins: Plugin[];
+  stateLines: string[];
 };
 
 const StateLines = [
@@ -54,23 +59,38 @@ export class Ext extends BaseExt<Params> {
         denops: Denops;
         actionParams: unknown;
       }) => {
-        const params = args.actionParams as MakeStateArgs;
+        const params = args.actionParams as LazyMakeStateArgs;
 
         let stateLines = StateLines;
 
+        type dummyResult = {
+          dummys: string[];
+          stateLines: string[];
+        };
+
         for (const plugin of params.plugins.filter((plugin) => plugin.lazy)) {
-          stateLines = stateLines.concat(
-            await args.denops.call(
-              "dpp#ext#lazy#_generate_dummy_commands",
-              plugin,
-            ) as string[],
-          );
-          stateLines = stateLines.concat(
-            await args.denops.call(
-              "dpp#ext#lazy#_generate_dummy_mappings",
-              plugin,
-            ) as string[],
-          );
+          const dummyCommands = await args.denops.call(
+            "dpp#ext#lazy#_generate_dummy_commands",
+            plugin,
+          ) as dummyResult;
+          if (dummyCommands.dummys.length > 0) {
+            plugin.dummy_commands = dummyCommands.dummys;
+            console.log(plugin);
+          }
+          if (dummyCommands.stateLines.length > 0) {
+            stateLines = stateLines.concat(dummyCommands.stateLines);
+          }
+
+          const dummyMappings = await args.denops.call(
+            "dpp#ext#lazy#_generate_dummy_mappings",
+            plugin,
+          ) as dummyResult;
+          if (dummyMappings.stateLines.length > 0) {
+            stateLines = stateLines.concat(dummyMappings.stateLines);
+          }
+          if (dummyMappings.dummys.length > 0) {
+            plugin.dummy_mappings = dummyMappings.dummys;
+          }
 
           if ("on_lua" in plugin) {
             stateLines = stateLines.concat(
@@ -82,7 +102,10 @@ export class Ext extends BaseExt<Params> {
           }
         }
 
-        return stateLines;
+        return {
+          plugins: params.plugins,
+          stateLines,
+        } satisfies LazyMakeStateResult;
       },
     },
   };

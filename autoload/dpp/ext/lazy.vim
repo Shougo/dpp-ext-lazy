@@ -207,7 +207,9 @@ function s:mapargrec(map, mode) abort
 endfunction
 
 function dpp#ext#lazy#_generate_dummy_commands(plugin) abort
-  let dummy_commands = []
+  let dummys = []
+  let state_lines = []
+
   for name in dpp#util#_convert2list(a:plugin->get('on_cmd', []))
     " Define dummy commands.
     let raw_cmd = 'command '
@@ -217,14 +219,22 @@ function dpp#ext#lazy#_generate_dummy_commands(plugin) abort
           \  '<bang>'->expand(), '<line1>'->expand(), '<line2>'->expand())",
           \   name->string(), a:plugin.name->string())
 
-    call add(dummy_commands, raw_cmd)
+    call add(dummys, name)
+    call add(state_lines, raw_cmd)
   endfor
-  return dummy_commands
+
+  return #{
+        \   dummys: dummys,
+        \   stateLines: state_lines,
+        \ }
 endfunction
 function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
-  let dummy_mappings = []
+  let state_lines = []
+  let dummys = []
+  let state_lines = []
   const normalized_name = dpp#util#_get_normalized_name(a:plugin)
   const on_map = a:plugin->get('on_map', [])
+
   let items = on_map->type() == v:t_dict ?
         \ on_map->items()->map({ _, val -> [val[0]->split('\zs'),
         \       dpp#util#_convert2list(val[1])]}) :
@@ -232,6 +242,7 @@ function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
         \       [val[0]->split('\zs'), val[1:]] :
         \       [['n', 'x', 'o'], [val]]
         \  })
+
   for [modes, mappings] in items
     if mappings ==# ['<Plug>']
       " Use plugin name.
@@ -256,12 +267,17 @@ function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
               \     mode ==# 't' ? " " .. escape .. ":call " :
               \     " :\<C-u>call ")
               \ .. prefix .. mode->string() .. ')<CR>'
-        call add(dummy_mappings, raw_map)
+
+        call add(dummys, mapping)
+        call add(state_lines, raw_map)
       endfor
     endfor
   endfor
 
-  return dummy_mappings
+  return #{
+        \   dummys: dummys,
+        \   stateLines: state_lines,
+        \ }
 endfunction
 function dpp#ext#lazy#_generate_on_lua(plugin) abort
   return dpp#util#_convert2list(a:plugin.on_lua)

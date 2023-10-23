@@ -15,19 +15,24 @@ https://github.com/Shougo/dpp.vim
 ## Configuration
 
 ```typescript
+type LazyMakeStateResult = {
+  plugins: Plugin[];
+  stateLines: string[];
+};
+
 const [context, options] = await args.contextBuilder.get(args.denops);
 
 // Get plugins from other exts
 const plugins = ...
 
-const stateLines = await args.dpp.extAction(
+const lazyResult = await args.dpp.extAction(
   args.denops,
   context,
   options,
   "lazy",
   "makeState",
   {
-    plugins,
+    plugins: Object.values(recordPlugins),
   },
-) as string[];
+) as LazyMakeStateResult;
 ```
