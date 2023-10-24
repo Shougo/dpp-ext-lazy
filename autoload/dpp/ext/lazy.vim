@@ -101,7 +101,8 @@ function dpp#ext#lazy#_on_lua(name) abort
 
   call dpp#source(dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
-        \   val->get('on_lua', [])->index(mod_root) >= 0
+        \   dpp#util#_convert2list(val->get('on_lua', []))
+        \   ->index(mod_root) >= 0
         \ }))
 endfunction
 

@@ -31,6 +31,7 @@ const StateLines = [
   "augroup dpp-events | augroup END",
   "if has('nvim')",
   "let g:dpp#_on_lua_plugins = {}",
+  "let g:dpp#_called_lua = {}",
   "lua <<END",
   "table.insert(package.loaders, 1, (function()",
   "  return function(mod_name)",
