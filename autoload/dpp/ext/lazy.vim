@@ -88,13 +88,10 @@ function dpp#ext#lazy#_on_func(name) abort
         \ }))
 endfunction
 
-function dpp#ext#lazy#_on_lua(name) abort
+function dpp#ext#lazy#_on_lua(name, mod_root) abort
   if g:dpp#_called_lua->has_key(a:name)
     return
   endif
-
-  " Only use the root of module name.
-  const mod_root = a:name->matchstr('^[^./]\+')
 
   " Prevent infinite loop
   let g:dpp#_called_lua[a:name] = v:true
@@ -102,7 +99,7 @@ function dpp#ext#lazy#_on_lua(name) abort
   call dpp#source(dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
         \   dpp#util#_convert2list(val->get('on_lua', []))
-        \   ->index(mod_root) >= 0
+        \      ->index(a:mod_root) >= 0
         \ }))
 endfunction
 

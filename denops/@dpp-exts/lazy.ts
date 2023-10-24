@@ -2,8 +2,8 @@ import {
   Actions,
   BaseExt,
   Plugin,
-} from "https://deno.land/x/dpp_vim@v0.0.4/types.ts";
-import { Denops } from "https://deno.land/x/dpp_vim@v0.0.4/deps.ts";
+} from "https://deno.land/x/dpp_vim@v0.0.5/types.ts";
+import { Denops } from "https://deno.land/x/dpp_vim@v0.0.5/deps.ts";
 
 type Params = Record<string, never>;
 
@@ -37,7 +37,7 @@ const StateLines = [
   "  return function(mod_name)",
   "    mod_root = string.match(mod_name, '^[^./]+')",
   "    if vim.g['dpp#_on_lua_plugins'][mod_root] then",
-  "      vim.fn['dpp#ext#lazy#_on_lua'](mod_name)",
+  "      vim.fn['dpp#ext#lazy#_on_lua'](mod_name, mod_root)",
   "    end",
   "    if package.loaded[mod_name] ~= nil then",
   "      local m = package.loaded[mod_name]",
@@ -69,7 +69,12 @@ export class Ext extends BaseExt<Params> {
           stateLines: string[];
         };
 
-        for (const plugin of params.plugins.filter((plugin) => plugin.lazy)) {
+        // NOTE: lazy flag may be not set.
+        const lazyPlugins = params.plugins.filter((plugin) =>
+          plugin.lazy ||
+          Object.keys(plugin).filter((k) => k.startsWith("on_")).length > 0
+        );
+        for (const plugin of lazyPlugins) {
           const dummyCommands = await args.denops.call(
             "dpp#ext#lazy#_generate_dummy_commands",
             plugin,
