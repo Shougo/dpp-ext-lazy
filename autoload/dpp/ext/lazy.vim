@@ -27,6 +27,7 @@ function dpp#ext#lazy#_on_default_event(event) abort
         \   !(val->has_key('on_event')) && val->has_key('on_if')
         \   && val.on_if->eval()
         \ })
+  echomsg plugins
 
   call s:source_events(a:event, plugins)
 endfunction
@@ -186,6 +187,29 @@ function dpp#ext#lazy#_on_map(mapping, name, mode) abort
   endif
 
   return ''
+endfunction
+
+function! s:get_input() abort
+  let input = ''
+  const termstr = '<M-_>'
+
+  call feedkeys(termstr, 'n')
+
+  while 1
+    let char = getchar()
+    let input ..= (char->type() == v:t_number) ? char->nr2char() : char
+
+    let idx = input->stridx(termstr)
+    if idx >= 1
+      let input = input[: idx - 1]
+      break
+    elseif idx == 0
+      let input = ''
+      break
+    endif
+  endwhile
+
+  return input
 endfunction
 
 function dpp#ext#lazy#_dummy_complete(arglead, cmdline, cursorpos) abort
