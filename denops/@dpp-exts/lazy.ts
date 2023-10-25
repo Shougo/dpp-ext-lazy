@@ -4,6 +4,7 @@ import {
   Plugin,
 } from "https://deno.land/x/dpp_vim@v0.0.5/types.ts";
 import { Denops } from "https://deno.land/x/dpp_vim@v0.0.5/deps.ts";
+import { convert2List } from "https://deno.land/x/dpp_vim@v0.0.5/utils.ts";
 
 type Params = Record<string, never>;
 
@@ -30,13 +31,13 @@ const StateLines = [
   "augroup END",
   "augroup dpp-events | augroup END",
   "if has('nvim')",
-  "let g:dpp#_on_lua_plugins = {}",
-  "let g:dpp#_called_lua = {}",
+  "let g:dpp#ext#_on_lua_plugins = {}",
+  "let g:dpp#ext#_called_lua = {}",
   "lua <<END",
   "table.insert(package.loaders, 1, (function()",
   "  return function(mod_name)",
   "    mod_root = string.match(mod_name, '^[^./]+')",
-  "    if vim.g['dpp#_on_lua_plugins'][mod_root] then",
+  "    if vim.g['dpp#ext#_on_lua_plugins'][mod_root] then",
   "      vim.fn['dpp#ext#lazy#_on_lua'](mod_name, mod_root)",
   "    end",
   "    if package.loaded[mod_name] ~= nil then",
@@ -74,6 +75,7 @@ export class Ext extends BaseExt<Params> {
           plugin.lazy ||
           Object.keys(plugin).filter((k) => k.startsWith("on_")).length > 0
         );
+        const existsEventPlugins: Record<string, boolean> = {};
         for (const plugin of lazyPlugins) {
           const dummyCommands = await args.denops.call(
             "dpp#ext#lazy#_generate_dummy_commands",
@@ -105,6 +107,22 @@ export class Ext extends BaseExt<Params> {
               ) as string[],
             );
           }
+
+          if ("on_event" in plugin) {
+            for (
+              const event of convert2List(plugin.on_event).filter(
+                (event) => !existsEventPlugins[event],
+              )
+            ) {
+              existsEventPlugins[event] = true;
+            }
+          }
+        }
+
+        for (const event of Object.keys(existsEventPlugins)) {
+          stateLines.push(
+            `autocmd dpp-events ${event} * call dpp#ext#lazy#_on_event('${event}')`,
+          );
         }
 
         return {

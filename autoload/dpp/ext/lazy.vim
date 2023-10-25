@@ -27,13 +27,15 @@ function dpp#ext#lazy#_on_default_event(event) abort
         \   !(val->has_key('on_event')) && val->has_key('on_if')
         \   && val.on_if->eval()
         \ })
-  echomsg plugins
 
   call s:source_events(a:event, plugins)
 endfunction
-function dpp#ext#lazy#_on_event(event, plugins) abort
-  let lazy_plugins = dpp#util#_get_plugins(a:plugins)
-        \ ->filter({ _, val -> !val.sourced })
+function dpp#ext#lazy#_on_event(event) abort
+  let lazy_plugins = dpp#util#_get_lazy_plugins()
+        \ ->filter({ _, val ->
+        \   dpp#util#_convert2list(val->get('on_event', []))
+        \   ->index(a:event) >= 0
+        \ })
   if lazy_plugins->empty()
     execute 'autocmd! dpp-events' a:event
     return
@@ -85,17 +87,18 @@ function dpp#ext#lazy#_on_func(name) abort
         \ ->filter({ _, val ->
         \   function_prefix->stridx(
         \             dpp#util#_get_normalized_name(val).'#') == 0
-        \   || val->get('on_func', [])->index(a:name) >= 0
+        \   || dpp#util#_convert2list(val->get('on_func', []))
+        \      ->index(a:name) >= 0
         \ }))
 endfunction
 
 function dpp#ext#lazy#_on_lua(name, mod_root) abort
-  if g:dpp#_called_lua->has_key(a:name)
+  if g:dpp#ext#_called_lua->has_key(a:name)
     return
   endif
 
   " Prevent infinite loop
-  let g:dpp#_called_lua[a:name] = v:true
+  let g:dpp#ext#_called_lua[a:name] = v:true
 
   call dpp#source(dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
@@ -104,13 +107,19 @@ function dpp#ext#lazy#_on_lua(name, mod_root) abort
         \ }))
 endfunction
 
-function dpp#ext#lazy#_on_pre_cmd(name) abort
+function dpp#ext#lazy#_on_pre_cmd(command) abort
+  if (':' .. a:command)->exists() == 2
+    " Remove the dummy command.
+    silent! execute 'delcommand' a:command
+  endif
+
   call dpp#source(
         \ dpp#util#_get_lazy_plugins()
-        \  ->filter({ _, val -> copy(val->get('on_cmd', []))
+        \  ->filter({ _, val ->
+        \    dpp#util#_convert2list(val->get('on_cmd', []))->copy()
         \    ->map({ _, val2 -> tolower(val2) })
-        \    ->index(a:name) >= 0
-        \    || a:name->tolower()
+        \    ->index(a:command) >= 0
+        \    || a:command->tolower()
         \    ->stridx(dpp#util#_get_normalized_name(val)->tolower()
         \    ->substitute('[_-]', '', 'g')) == 0
         \  }))
@@ -213,14 +222,8 @@ function! s:get_input() abort
 endfunction
 
 function dpp#ext#lazy#_dummy_complete(arglead, cmdline, cursorpos) abort
-  const command = a:cmdline->matchstr('\h\w*')
-  if (':' .. command)->exists() == 2
-    " Remove the dummy command.
-    silent! execute 'delcommand' command
-  endif
-
   " Load plugins
-  call dpp#ext#lazy#_on_pre_cmd(tolower(command))
+  call dpp#ext#lazy#_on_pre_cmd(tolower(a:cmdline->matchstr('\h\w*')))
 
   return a:arglead
 endfunction
@@ -310,6 +313,6 @@ function dpp#ext#lazy#_generate_on_lua(plugin) abort
   return dpp#util#_convert2list(a:plugin.on_lua)
         \ ->map({ _, val -> val->matchstr('^[^./]\+') })
         \ ->map({ _, mod ->
-        \   printf("let g:dpp#_on_lua_plugins[%s] = v:true", string(mod))
+        \   printf("let g:dpp#ext#_on_lua_plugins[%s] = v:true", string(mod))
         \ })
 endfunction
