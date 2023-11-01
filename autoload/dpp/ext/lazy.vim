@@ -265,7 +265,9 @@ function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
   const normalized_name = dpp#util#_get_normalized_name(a:plugin)
   const on_map = a:plugin->get('on_map', [])
 
-  let items = on_map->type() == v:t_dict ?
+  let items =
+        \ on_map->type() == v:t_string ? [[['n', 'x', 'o'], [on_map]]] :
+        \ on_map->type() == v:t_dict ?
         \ on_map->items()->map({ _, val -> [val[0]->split('\zs'),
         \       dpp#util#_convert2list(val[1])]}) :
         \ on_map->copy()->map({ _, val -> type(val) == v:t_list ?
