@@ -37,7 +37,11 @@ function dpp#ext#lazy#_on_event(event) abort
         \   ->index(a:event) >= 0
         \ })
   if lazy_plugins->empty()
-    execute 'autocmd! dpp-events' a:event
+    if exists('##' .. a:event)
+      execute 'autocmd! dpp-events' a:event
+    else
+      execute 'autocmd! dpp-events User' a:event
+    endif
     return
   endif
 
