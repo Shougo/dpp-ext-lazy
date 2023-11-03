@@ -3,7 +3,7 @@ import {
   BaseExt,
   Plugin,
 } from "https://deno.land/x/dpp_vim@v0.0.5/types.ts";
-import { Denops } from "https://deno.land/x/dpp_vim@v0.0.5/deps.ts";
+import { Denops, fn } from "https://deno.land/x/dpp_vim@v0.0.5/deps.ts";
 import { convert2List } from "https://deno.land/x/dpp_vim@v0.0.5/utils.ts";
 
 type Params = Record<string, never>;
@@ -120,9 +120,16 @@ export class Ext extends BaseExt<Params> {
         }
 
         for (const event of Object.keys(existsEventPlugins)) {
-          stateLines.push(
-            `autocmd dpp-events ${event} * call dpp#ext#lazy#_on_event('${event}')`,
-          );
+          if (await fn.exists(args.denops, `##${event}`)) {
+            stateLines.push(
+              `autocmd dpp-events ${event} * call dpp#ext#lazy#_on_event('${event}')`,
+            );
+          } else {
+            // It is User events
+            stateLines.push(
+              `autocmd dpp-events User ${event} call dpp#ext#lazy#_on_event('${event}')`,
+            );
+          }
         }
 
         return {
