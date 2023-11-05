@@ -56,11 +56,18 @@ function s:source_events(event, plugins) abort
     return
   endif
 
-  const prev_autocmd = ('autocmd ' .. a:event)->execute()
+  const prev_autocmd =
+        \ ('autocmd ' .. (exists('##' .. a:event) ? '' : 'User ') .. a:event)
+        \ ->execute()
 
-  call dpp#source(a:plugins)
+  const sourced = dpp#source(a:plugins)
+  if sourced->empty()
+    return
+  endif
 
-  const new_autocmd = ('autocmd ' .. a:event)->execute()
+  const new_autocmd =
+        \ ('autocmd ' .. (exists('##' .. a:event) ? '' : 'User '))
+        \ ->execute()
 
   if a:event ==# 'InsertCharPre'
     " Queue this key again
