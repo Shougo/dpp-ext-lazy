@@ -122,7 +122,7 @@ function dpp#ext#lazy#_on_pre_cmd(command) abort
         \  ->filter({ _, val ->
         \    dpp#util#_convert2list(val->get('on_cmd', []))->copy()
         \    ->map({ _, val2 -> tolower(val2) })
-        \    ->index(a:command) >= 0
+        \    ->index(a:command->tolower()) >= 0
         \    || a:command->tolower()
         \    ->stridx(dpp#util#_get_normalized_name(val)->tolower()
         \    ->substitute('[_-]', '', 'g')) == 0
@@ -227,7 +227,7 @@ endfunction
 
 function dpp#ext#lazy#_dummy_complete(arglead, cmdline, cursorpos) abort
   " Load plugins
-  call dpp#ext#lazy#_on_pre_cmd(tolower(a:cmdline->matchstr('\h\w*')))
+  call dpp#ext#lazy#_on_pre_cmd(a:cmdline->matchstr('\h\w*'))
 
   return a:arglead
 endfunction
