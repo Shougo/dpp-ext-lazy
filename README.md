@@ -34,5 +34,5 @@ const lazyResult = await args.dpp.extAction(
   {
     plugins: Object.values(recordPlugins),
   },
-) as LazyMakeStateResult;
+) as LazyMakeStateResult | undefined;
 ```

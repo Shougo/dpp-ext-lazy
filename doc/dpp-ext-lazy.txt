@@ -50,7 +50,7 @@ EXAMPLES                                               *dpp-ext-lazy-examples*
 	  {
 	    plugins: Object.values(recordPlugins),
 	  },
-	) as LazyMakeStateResult;
+	) as LazyMakeStateResult | undefined;
 <
 
 ==============================================================================
