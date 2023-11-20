@@ -252,6 +252,7 @@ function dpp#ext#lazy#_generate_dummy_commands(plugin) abort
   let state_lines = []
 
   for name in dpp#util#_convert2list(a:plugin->get('on_cmd', []))
+        \ ->filter({ _, val -> val =~# '^\h\w*$' })
     " Define dummy commands.
     let raw_cmd = 'command '
           \ .. '-complete=custom,dpp#ext#lazy#_dummy_complete'
