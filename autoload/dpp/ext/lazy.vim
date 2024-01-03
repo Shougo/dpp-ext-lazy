@@ -100,7 +100,7 @@ function dpp#ext#lazy#_on_func(name) abort
         \             dpp#util#_get_normalized_name(val).'#') == 0
         \   || dpp#util#_convert2list(val->get('on_func', []))
         \      ->index(a:name) >= 0
-        \ }))
+        \ }), function_prefix)
 endfunction
 
 function dpp#ext#lazy#_on_lua(name, mod_root) abort
