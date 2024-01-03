@@ -18,7 +18,8 @@ type LazyMakeStateResult = {
 };
 
 const StateLines = [
-  "augroup dpp",
+  "augroup dpp-ext-lazy",
+  "  autocmd!",
   "  autocmd FuncUndefined *",
   "       \\ : if '<afile>'->expand()->stridx('remote#') != 0",
   "       \\ |   call dpp#ext#lazy#_on_func('<afile>'->expand())",
@@ -29,7 +30,6 @@ const StateLines = [
   " autocmd FileType *? call dpp#ext#lazy#_on_default_event('FileType')",
   " autocmd CmdUndefined * call dpp#ext#lazy#_on_pre_cmd('<afile>'->expand())",
   "augroup END",
-  "augroup dpp-events | augroup END",
   "if has('nvim')",
   "let g:dpp#ext#_on_lua_plugins = {}",
   "let g:dpp#ext#_called_lua = {}",
@@ -122,12 +122,12 @@ export class Ext extends BaseExt<Params> {
         for (const event of Object.keys(existsEventPlugins)) {
           if (await fn.exists(args.denops, `##${event}`)) {
             stateLines.push(
-              `autocmd dpp-events ${event} * call dpp#ext#lazy#_on_event('${event}')`,
+              `autocmd dpp-ext-lazy ${event} * call dpp#ext#lazy#_on_event('${event}')`,
             );
           } else {
             // It is User events
             stateLines.push(
-              `autocmd dpp-events User ${event} call dpp#ext#lazy#_on_event('${event}')`,
+              `autocmd dpp-ext-lazy User ${event} call dpp#ext#lazy#_on_event('${event}')`,
             );
           }
         }
