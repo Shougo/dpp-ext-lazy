@@ -76,12 +76,12 @@ function s:source_events(event, plugins) abort
   else
     if '#BufReadCmd'->exists() && a:event ==# 'BufNew'
       " For BufReadCmd plugins
-      silent doautocmd <nomodeline> BufReadCmd
+      silent! doautocmd <nomodeline> BufReadCmd
     endif
     if ('#' .. a:event)->exists() && prev_autocmd !=# new_autocmd
-      execute 'doautocmd <nomodeline>' a:event
+      execute 'silent! doautocmd <nomodeline>' a:event
     elseif ('#User#' .. a:event)->exists()
-      execute 'doautocmd <nomodeline> User' a:event
+      execute 'silent! doautocmd <nomodeline> User' a:event
     endif
   endif
 endfunction
