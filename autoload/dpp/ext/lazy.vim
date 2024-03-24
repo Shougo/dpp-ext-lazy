@@ -7,19 +7,20 @@ function dpp#ext#lazy#_on_default_event(event) abort
   if path->fnamemodify(':t') ==# '~'
     let path = '~'
   endif
-  let path = dpp#util#_expand(path)
+  let path = path->dpp#util#_expand()
 
   for filetype in &l:filetype->split('\.')
     let plugins += lazy_plugins->copy()
           \ ->filter({ _, val ->
-          \   dpp#util#_convert2list(val->get('on_ft', []))
+          \   val->get('on_ft', [])
+          \   ->dpp#util#_convert2list()
           \   ->index(filetype) >= 0
           \ })
   endfor
 
   let plugins += lazy_plugins->copy()
         \ ->filter({ _, val ->
-        \   !(dpp#util#_convert2list(val->get('on_path', []))->copy()
+        \   !(val->get('on_path', [])->dpp#util#_convert2list()->copy()
         \   ->filter({ _, val -> path =~? val })->empty())
         \ })
   let plugins += lazy_plugins->copy()
@@ -33,7 +34,8 @@ endfunction
 function dpp#ext#lazy#_on_event(event) abort
   let lazy_plugins = dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
-        \   dpp#util#_convert2list(val->get('on_event', []))
+        \   val->get('on_event', [])
+        \   ->dpp#util#_convert2list()
         \   ->index(a:event) >= 0
         \ })
   if lazy_plugins->empty()
@@ -97,8 +99,9 @@ function dpp#ext#lazy#_on_func(name) abort
   call dpp#source(dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
         \   function_prefix->stridx(
-        \             dpp#util#_get_normalized_name(val).'#') == 0
-        \   || dpp#util#_convert2list(val->get('on_func', []))
+        \             val->dpp#util#_get_normalized_name() .. '#') == 0
+        \   || val->get('on_func', [])
+        \      ->dpp#util#_convert2list()
         \      ->index(a:name) == 0
         \ }), function_prefix)
 endfunction
@@ -113,8 +116,9 @@ function dpp#ext#lazy#_on_lua(name, mod_root) abort
 
   call dpp#source(dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
-        \   dpp#util#_convert2list(val->get('on_lua', []))
-        \      ->index(a:mod_root) >= 0
+        \   val->get('on_lua', [])
+        \   ->dpp#util#_convert2list()
+        \   ->index(a:mod_root) >= 0
         \ }))
 endfunction
 
@@ -127,11 +131,12 @@ function dpp#ext#lazy#_on_pre_cmd(command) abort
   call dpp#source(
         \ dpp#util#_get_lazy_plugins()
         \  ->filter({ _, val ->
-        \    dpp#util#_convert2list(val->get('on_cmd', []))->copy()
+        \    val->get('on_cmd', [])
+        \    ->dpp#util#_convert2list()->copy()
         \    ->map({ _, val2 -> tolower(val2) })
         \    ->index(a:command->tolower()) >= 0
         \    || a:command->tolower()
-        \    ->stridx(dpp#util#_get_normalized_name(val)->tolower()
+        \    ->stridx(val->dpp#util#_get_normalized_name()->tolower()
         \    ->substitute('[_-]', '', 'g')) == 0
         \  }))
 endfunction
@@ -251,7 +256,7 @@ function dpp#ext#lazy#_generate_dummy_commands(plugin) abort
   let dummys = []
   let state_lines = []
 
-  for name in dpp#util#_convert2list(a:plugin->get('on_cmd', []))
+  for name in a:plugin->get('on_cmd', [])->dpp#util#_convert2list()
         \ ->filter({ _, val -> val =~# '^\h\w*$' })
     " Define dummy commands.
     let raw_cmd = 'command '
@@ -274,14 +279,14 @@ function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
   let state_lines = []
   let dummys = []
   let state_lines = []
-  const normalized_name = dpp#util#_get_normalized_name(a:plugin)
+  const normalized_name = a:plugin->dpp#util#_get_normalized_name()
   const on_map = a:plugin->get('on_map', [])
 
   let items =
         \ on_map->type() == v:t_string ? [[['n', 'x', 'o'], [on_map]]] :
         \ on_map->type() == v:t_dict ?
         \ on_map->items()->map({ _, val -> [val[0]->split('\zs'),
-        \       dpp#util#_convert2list(val[1])]}) :
+        \       val[1]->dpp#util#_convert2list()]}) :
         \ on_map->copy()->map({ _, val -> type(val) == v:t_list ?
         \       [val[0]->split('\zs'), val[1:]] :
         \       [['n', 'x', 'o'], [val]]
@@ -324,9 +329,11 @@ function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
         \ }
 endfunction
 function dpp#ext#lazy#_generate_on_lua(plugin) abort
-  return dpp#util#_convert2list(a:plugin.on_lua)
+  return a:plugin.on_lua
+        \ ->dpp#util#_convert2list()
         \ ->map({ _, val -> val->matchstr('^[^./]\+') })
         \ ->map({ _, mod ->
-        \   printf("let g:dpp#ext#_on_lua_plugins[%s] = v:true", string(mod))
+        \   printf("let g:dpp#ext#_on_lua_plugins[%s] = v:true",
+        \          mod->string())
         \ })
 endfunction
