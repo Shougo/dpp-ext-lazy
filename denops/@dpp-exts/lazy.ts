@@ -2,9 +2,9 @@ import {
   Actions,
   BaseExt,
   Plugin,
-} from "https://deno.land/x/dpp_vim@v0.0.7/types.ts";
-import { Denops, fn } from "https://deno.land/x/dpp_vim@v0.0.7/deps.ts";
-import { convert2List } from "https://deno.land/x/dpp_vim@v0.0.7/utils.ts";
+} from "https://deno.land/x/dpp_vim@v0.2.0/types.ts";
+import { Denops, fn } from "https://deno.land/x/dpp_vim@v0.2.0/deps.ts";
+import { convert2List } from "https://deno.land/x/dpp_vim@v0.2.0/utils.ts";
 
 type Params = Record<string, never>;
 
