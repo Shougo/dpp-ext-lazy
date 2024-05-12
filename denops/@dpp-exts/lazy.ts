@@ -75,7 +75,11 @@ export class Ext extends BaseExt<Params> {
           plugin.lazy ||
           Object.keys(plugin).filter((k) => k.startsWith("on_")).length > 0
         );
-        const existsEventPlugins: Record<string, boolean> = {};
+
+        // NOTE: on_map and on_cmd should be loaded on SafeState.
+        stateLines = stateLines.concat([
+          "function! s:define_lazy_config() abort",
+        ]);
         for (const plugin of lazyPlugins) {
           const dummyCommands = await args.denops.call(
             "dpp#ext#lazy#_generate_dummy_commands",
@@ -98,7 +102,14 @@ export class Ext extends BaseExt<Params> {
           if (dummyMappings.dummys.length > 0) {
             plugin.dummy_mappings = dummyMappings.dummys;
           }
+        }
+        stateLines = stateLines.concat([
+          "endfunction",
+          "autocmd dpp-ext-lazy SafeState * ++once call s:define_lazy_config()"
+        ]);
 
+        const existsEventPlugins: Record<string, boolean> = {};
+        for (const plugin of lazyPlugins) {
           if ("on_lua" in plugin) {
             stateLines = stateLines.concat(
               await args.denops.call(
