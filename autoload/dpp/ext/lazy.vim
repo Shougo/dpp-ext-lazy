@@ -259,9 +259,9 @@ function dpp#ext#lazy#_generate_dummy_commands(plugin) abort
   for name in a:plugin->get('on_cmd', [])->dpp#util#_convert2list()
         \ ->filter({ _, val -> val =~# '^\h\w*$' })
     " Define dummy commands.
-    let raw_cmd = 'command '
+    let raw_cmd = 'silent! command '
           \ .. '-complete=custom,dpp#ext#lazy#_dummy_complete'
-          \ .. ' -bang -bar -range -nargs=* '. name
+          \ .. ' -bang -bar -range -nargs=* ' .. name
           \ .. printf(" call dpp#ext#lazy#_on_cmd(%s, %s, <q-args>,
           \  '<bang>'->expand(), '<line1>'->expand(), '<line2>'->expand())",
           \   name->string(), a:plugin.name->string())
