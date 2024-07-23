@@ -317,7 +317,7 @@ function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
               \     " :\<C-u>call ")
               \ .. prefix .. mode->string() .. ')<CR>'
 
-        call add(dummys, mapping)
+        call add(dummys, [mode, mapping])
         call add(state_lines, raw_map)
       endfor
     endfor

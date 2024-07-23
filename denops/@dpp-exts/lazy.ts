@@ -2,9 +2,12 @@ import {
   Actions,
   BaseExt,
   Plugin,
-} from "https://deno.land/x/dpp_vim@v0.2.0/types.ts";
-import { Denops, fn } from "https://deno.land/x/dpp_vim@v0.2.0/deps.ts";
-import { convert2List } from "https://deno.land/x/dpp_vim@v0.2.0/utils.ts";
+} from "https://deno.land/x/dpp_vim@v0.3.1/types.ts";
+import { Denops, fn } from "https://deno.land/x/dpp_vim@v0.3.1/deps.ts";
+import {
+  convert2List,
+  printError,
+} from "https://deno.land/x/dpp_vim@v0.3.1/utils.ts";
 
 type Params = Record<string, never>;
 
@@ -65,7 +68,12 @@ export class Ext extends BaseExt<Params> {
 
         let stateLines = StateLines;
 
-        type dummyResult = {
+        type dummyMappingsResult = {
+          dummys: [string, string][];
+          stateLines: string[];
+        };
+
+        type dummyCommandsResult = {
           dummys: string[];
           stateLines: string[];
         };
@@ -80,16 +88,35 @@ export class Ext extends BaseExt<Params> {
         stateLines = stateLines.concat([
           "function! s:define_on_map() abort",
         ]);
+        const checkDummyMaps: Map<string, Set<string>> = new Map();
         for (const plugin of lazyPlugins) {
           const dummyMappings = await args.denops.call(
             "dpp#ext#lazy#_generate_dummy_mappings",
             plugin,
-          ) as dummyResult;
+          ) as dummyMappingsResult;
           if (dummyMappings.stateLines.length > 0) {
             stateLines = stateLines.concat(dummyMappings.stateLines);
           }
           if (dummyMappings.dummys.length > 0) {
             plugin.dummy_mappings = dummyMappings.dummys;
+
+            for (const [mode, map] of dummyMappings.dummys) {
+              if (!checkDummyMaps.get(mode)) {
+                checkDummyMaps.set(mode, new Set());
+              }
+
+              const check = checkDummyMaps.get(mode);
+              if (check) {
+                if (check.has(map)) {
+                  await printError(
+                    args.denops,
+                    `Duplicated on_map is detected: "${map}" for mode "${mode}" in "${plugin.name}"`,
+                  );
+                } else {
+                  check.add(map);
+                }
+              }
+            }
           }
         }
         stateLines = stateLines.concat([
@@ -98,13 +125,24 @@ export class Ext extends BaseExt<Params> {
         ]);
 
         const existsEventPlugins: Record<string, boolean> = {};
+        const checkDummyCommands: Set<string> = new Set();
         for (const plugin of lazyPlugins) {
           const dummyCommands = await args.denops.call(
             "dpp#ext#lazy#_generate_dummy_commands",
             plugin,
-          ) as dummyResult;
+          ) as dummyCommandsResult;
           if (dummyCommands.dummys.length > 0) {
             plugin.dummy_commands = dummyCommands.dummys;
+            for (const command of dummyCommands.dummys) {
+              if (checkDummyCommands.has(command)) {
+                await printError(
+                  args.denops,
+                  `Duplicated on_cmd is detected: "${command}" in "${plugin.name}"`,
+                );
+              } else {
+                checkDummyCommands.add(command);
+              }
+            }
           }
           if (dummyCommands.stateLines.length > 0) {
             stateLines = stateLines.concat(dummyCommands.stateLines);
