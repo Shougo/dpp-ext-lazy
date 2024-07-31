@@ -1,13 +1,15 @@
 import {
   Actions,
   BaseExt,
+  Denops,
   Plugin,
-} from "https://deno.land/x/dpp_vim@v0.3.1/types.ts";
-import { Denops, fn } from "https://deno.land/x/dpp_vim@v0.3.1/deps.ts";
+} from "jsr:@shougo/dpp-vim@1.0.0/types";
 import {
   convert2List,
   printError,
-} from "https://deno.land/x/dpp_vim@v0.3.1/utils.ts";
+} from "jsr:@shougo/dpp-vim@1.0.0/utils";
+
+import * as fn from "jsr:@denops/std@7.0.1/function";
 
 type Params = Record<string, never>;
 
