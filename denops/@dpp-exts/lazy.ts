@@ -1,23 +1,20 @@
 import {
-  Actions,
+  type Actions,
   BaseExt,
-  Denops,
-  Plugin,
-} from "jsr:@shougo/dpp-vim@1.0.0/types";
-import {
-  convert2List,
-  printError,
-} from "jsr:@shougo/dpp-vim@1.0.0/utils";
+  type Plugin,
+} from "jsr:@shougo/dpp-vim@~2.1.0/types";
+import { convert2List, printError } from "jsr:@shougo/dpp-vim@~2.1.0/utils";
 
-import * as fn from "jsr:@denops/std@7.0.1/function";
+import type { Denops } from "jsr:@denops/std@~7.0.1";
+import * as fn from "jsr:@denops/std@~7.0.3/function";
 
-type Params = Record<string, never>;
+export type Params = Record<string, never>;
 
-type LazyMakeStateArgs = {
+export type LazyMakeStateArgs = {
   plugins: Plugin[];
 };
 
-type LazyMakeStateResult = {
+export type LazyMakeStateResult = {
   plugins: Plugin[];
   stateLines: string[];
 };
