@@ -57,7 +57,8 @@ const StateLines = [
   "endif",
 ];
 
-export interface ExtActions<Params extends BaseActionParams> extends Actions<Params> {
+export interface ExtActions<Params extends BaseActionParams>
+  extends Actions<Params> {
   makeState: Action<Params, LazyMakeStateResult>;
 }
 
