@@ -69,7 +69,7 @@ export class Ext extends BaseExt<Params> {
       callback: async (args: {
         denops: Denops;
         actionParams: unknown;
-      }): Promise<LazyMakeStateResult> => {
+      }) => {
         const params = args.actionParams as LazyMakeStateArgs;
 
         let stateLines = StateLines;
