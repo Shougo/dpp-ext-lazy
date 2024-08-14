@@ -1,9 +1,11 @@
 import {
+  type Action,
   type Actions,
+  type BaseActionParams,
   BaseExt,
   type Plugin,
-} from "jsr:@shougo/dpp-vim@~2.1.0/types";
-import { convert2List, printError } from "jsr:@shougo/dpp-vim@~2.1.0/utils";
+} from "jsr:@shougo/dpp-vim@~2.2.0/types";
+import { convert2List, printError } from "jsr:@shougo/dpp-vim@~2.2.0/utils";
 
 import type { Denops } from "jsr:@denops/std@~7.0.1";
 import * as fn from "jsr:@denops/std@~7.0.3/function";
@@ -55,8 +57,12 @@ const StateLines = [
   "endif",
 ];
 
+export interface ExtActions<Params extends BaseActionParams> extends Actions<Params> {
+  makeState: Action<Params, LazyMakeStateResult>;
+}
+
 export class Ext extends BaseExt<Params> {
-  override actions: Actions<Params> = {
+  override actions: ExtActions<Params> = {
     makeState: {
       description: "Make stateLines",
       callback: async (args: {
