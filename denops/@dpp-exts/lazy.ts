@@ -1,6 +1,5 @@
 import {
   type Action,
-  type Actions,
   type BaseActionParams,
   BaseExt,
   type Plugin,
