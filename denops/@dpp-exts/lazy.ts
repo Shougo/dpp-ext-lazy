@@ -57,10 +57,9 @@ const StateLines = [
   "endif",
 ];
 
-export interface ExtActions<Params extends BaseActionParams>
-  extends Actions<Params> {
+export type ExtActions<Params extends BaseActionParams> = {
   makeState: Action<Params, LazyMakeStateResult>;
-}
+};
 
 export class Ext extends BaseExt<Params> {
   override actions: ExtActions<Params> = {
