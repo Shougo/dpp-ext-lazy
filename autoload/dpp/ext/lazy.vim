@@ -89,11 +89,11 @@ function s:source_events(event, plugins) abort
 endfunction
 
 function dpp#ext#lazy#_on_func(name) abort
-  const function_prefix = a:name->substitute('[^#]*$', '', '')
-  if a:name =~# '^dpp'
+  if a:name->stridx('dpp#') ==# 0
     return
   endif
 
+  const function_prefix = a:name->substitute('[^#]*$', '', '')
   call dpp#source(dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
         \   function_prefix->stridx(
