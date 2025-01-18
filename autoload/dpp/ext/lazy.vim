@@ -90,9 +90,6 @@ endfunction
 
 function dpp#ext#lazy#_on_func(name) abort
   const function_prefix = a:name->substitute('[^#]*$', '', '')
-  if function_prefix =~# '^dpp#'
-    return
-  endif
 
   call dpp#source(dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
