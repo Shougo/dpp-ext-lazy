@@ -91,8 +91,6 @@ endfunction
 function dpp#ext#lazy#_on_func(name) abort
   const function_prefix = a:name->substitute('[^#]*$', '', '')
   if function_prefix =~# '^dpp#'
-        \ || (function_prefix =~# '^vital#' &&
-        \     function_prefix !~# '^vital#vital#')
     return
   endif
 
