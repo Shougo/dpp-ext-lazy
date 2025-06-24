@@ -1,9 +1,9 @@
-import { type BaseParams, type Plugin } from "jsr:@shougo/dpp-vim@~4.1.0/types";
-import { type Action, BaseExt } from "jsr:@shougo/dpp-vim@~4.1.0/ext";
-import { convert2List, printError } from "jsr:@shougo/dpp-vim@~4.1.0/utils";
+import { type BaseParams, type Plugin } from "jsr:@shougo/dpp-vim@~4.4.0/types";
+import { type Action, BaseExt } from "jsr:@shougo/dpp-vim@~4.4.0/ext";
+import { convert2List, printError } from "jsr:@shougo/dpp-vim@~4.4.0/utils";
 
-import type { Denops } from "jsr:@denops/std@~7.4.0";
-import * as fn from "jsr:@denops/std@~7.4.0/function";
+import type { Denops } from "jsr:@denops/std@~7.6.0";
+import * as fn from "jsr:@denops/std@~7.6.0/function";
 
 export type Params = Record<string, never>;
 
@@ -26,6 +26,7 @@ const StateLines = [
   " autocmd VimEnter *? call dpp#ext#lazy#_on_default_event('VimEnter')",
   " autocmd FileType *? call dpp#ext#lazy#_on_default_event('FileType')",
   " autocmd CmdUndefined * call dpp#ext#lazy#_on_pre_cmd('<afile>'->expand())",
+  " autocmd BufRead,DirChanged * call dpp#ext#lazy#_on_root()",
   "augroup END",
   "if has('nvim')",
   "let g:dpp#ext#_on_lua_plugins = {}",

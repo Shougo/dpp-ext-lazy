@@ -212,6 +212,20 @@ function dpp#ext#lazy#_on_map(mapping, name, mode) abort
   return ''
 endfunction
 
+function dpp#ext#lazy#_on_root() abort
+  for plugin in dpp#util#_get_lazy_plugins()
+        \  ->filter({ _, val -> !val->get('on_root', [])->empty() })
+
+    for root in plugin.on_root->dpp#util#_convert2list()
+      if !root->findfile(';')->empty()
+        call dpp#source(plugin.name)
+        break
+      endif
+    endfor
+  endfor
+endfunction
+
+
 function! s:get_input() abort
   let input = ''
   const termstr = '<M-_>'
