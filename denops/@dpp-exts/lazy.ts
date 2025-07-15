@@ -1,4 +1,4 @@
-import { type BaseParams, type Plugin } from "jsr:@shougo/dpp-vim@~4.4.0/types";
+import type { BaseParams, Plugin } from "jsr:@shougo/dpp-vim@~4.4.0/types";
 import { type Action, BaseExt } from "jsr:@shougo/dpp-vim@~4.4.0/ext";
 import { convert2List, printError } from "jsr:@shougo/dpp-vim@~4.4.0/utils";
 
@@ -27,6 +27,8 @@ const StateLines = [
   " autocmd FileType *? call dpp#ext#lazy#_on_default_event('FileType')",
   " autocmd CmdUndefined * call dpp#ext#lazy#_on_pre_cmd('<afile>'->expand())",
   " autocmd BufRead,DirChanged * call dpp#ext#lazy#_on_root()",
+  "augroup END",
+  "augroup dpp-ext-lazy-on_event",
   "augroup END",
   "if has('nvim')",
   "let g:dpp#ext#_on_lua_plugins = {}",
@@ -109,7 +111,8 @@ export class Ext extends BaseExt<Params> {
                 if (check.has(map)) {
                   await printError(
                     args.denops,
-                    `Duplicated on_map is detected: "${map}" for mode "${mode}" in "${plugin.name}"`,
+                    "Duplicated on_map is detected: " +
+                      `"${map}" for mode "${mode}" in "${plugin.name}"`,
                   );
                 } else {
                   check.add(map);
@@ -136,7 +139,8 @@ export class Ext extends BaseExt<Params> {
               if (checkDummyCommands.has(command)) {
                 await printError(
                   args.denops,
-                  `Duplicated on_cmd is detected: "${command}" in "${plugin.name}"`,
+                  "Duplicated on_cmd is detected: " +
+                    `"${command}" in "${plugin.name}"`,
                 );
               } else {
                 checkDummyCommands.add(command);
@@ -170,12 +174,14 @@ export class Ext extends BaseExt<Params> {
         for (const event of Object.keys(existsEventPlugins)) {
           if (await fn.exists(args.denops, `##${event}`)) {
             stateLines.push(
-              `autocmd dpp-ext-lazy ${event} * call dpp#ext#lazy#_on_event('${event}')`,
+              `autocmd dpp-ext-lazy-on_event ${event} * ` +
+                `call dpp#ext#lazy#_on_event('${event}')`,
             );
           } else {
             // It is User events
             stateLines.push(
-              `autocmd dpp-ext-lazy User ${event} call dpp#ext#lazy#_on_event('${event}')`,
+              `autocmd dpp-ext-lazy-on_event User ${event} ` +
+                `call dpp#ext#lazy#_on_event('${event}')`,
             );
           }
         }
