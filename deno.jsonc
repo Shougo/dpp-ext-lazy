@@ -1,5 +1,4 @@
 {
-  "name": "@shougo/dpp-ext-lazy",
   "lock": false,
   "tasks": {
     "cache": "deno install --reload",
