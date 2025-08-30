@@ -1,9 +1,9 @@
-import type { BaseParams, Plugin } from "jsr:@shougo/dpp-vim@~4.4.0/types";
-import { type Action, BaseExt } from "jsr:@shougo/dpp-vim@~4.4.0/ext";
-import { convert2List, printError } from "jsr:@shougo/dpp-vim@~4.4.0/utils";
+import type { BaseParams, Plugin } from "@shougo/dpp-vim/types";
+import { type Action, BaseExt } from "@shougo/dpp-vim/ext";
+import { convert2List, printError } from "@shougo/dpp-vim/utils";
 
-import type { Denops } from "jsr:@denops/std@~7.6.0";
-import * as fn from "jsr:@denops/std@~7.6.0/function";
+import type { Denops } from "@denops/std";
+import * as fn from "@denops/std/function";
 
 export type Params = Record<string, never>;
 
