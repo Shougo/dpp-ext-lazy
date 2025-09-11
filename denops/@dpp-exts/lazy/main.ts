@@ -86,9 +86,10 @@ export class Ext extends BaseExt<Params> {
         );
 
         // NOTE: on_map should be loaded on SafeState.
-        stateLines = stateLines.concat([
+        stateLines = [
+          ...stateLines,
           "function! s:define_on_map() abort",
-        ]);
+        ];
         const checkDummyMaps: Map<string, Set<string>> = new Map();
         for (const plugin of lazyPlugins) {
           const dummyMappings = await args.denops.call(
@@ -96,7 +97,7 @@ export class Ext extends BaseExt<Params> {
             plugin,
           ) as dummyMappingsResult;
           if (dummyMappings.stateLines.length > 0) {
-            stateLines = stateLines.concat(dummyMappings.stateLines);
+            stateLines = [...stateLines, ...dummyMappings.stateLines];
           }
           if (dummyMappings.dummys.length > 0) {
             plugin.dummy_mappings = dummyMappings.dummys;
@@ -121,10 +122,11 @@ export class Ext extends BaseExt<Params> {
             }
           }
         }
-        stateLines = stateLines.concat([
+        stateLines = [
+          ...stateLines,
           "endfunction",
           "autocmd dpp-ext-lazy SafeState * ++once call s:define_on_map()",
-        ]);
+        ];
 
         const existsEventPlugins: Record<string, boolean> = {};
         const checkDummyCommands: Set<string> = new Set();
@@ -148,16 +150,17 @@ export class Ext extends BaseExt<Params> {
             }
           }
           if (dummyCommands.stateLines.length > 0) {
-            stateLines = stateLines.concat(dummyCommands.stateLines);
+            stateLines = [...stateLines, ...dummyCommands.stateLines];
           }
 
           if ("on_lua" in plugin) {
-            stateLines = stateLines.concat(
-              await args.denops.call(
+            stateLines = [
+              ...stateLines,
+              ...await args.denops.call(
                 "dpp#ext#lazy#_generate_on_lua",
                 plugin,
               ) as string[],
-            );
+            ];
           }
 
           if ("on_event" in plugin) {
