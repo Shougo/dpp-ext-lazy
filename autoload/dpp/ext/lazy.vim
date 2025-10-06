@@ -130,8 +130,8 @@ function dpp#ext#lazy#_on_pre_cmd(command) abort
         \ dpp#util#_get_lazy_plugins()
         \  ->filter({ _, val ->
         \    val->get('on_cmd', [])
-        \    ->dpp#util#_convert2list()->copy()
-        \    ->map({ _, val2 -> tolower(val2) })
+        \    ->dpp#util#_convert2list()
+        \    ->mapnew({ _, val2 -> tolower(val2) })
         \    ->index(a:command->tolower()) >= 0
         \    || a:command->tolower()
         \    ->stridx(val->dpp#util#_get_normalized_name()->tolower()
@@ -297,9 +297,9 @@ function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
   let items =
         \ on_map->type() == v:t_string ? [[['n', 'x', 'o'], [on_map]]] :
         \ on_map->type() == v:t_dict ?
-        \ on_map->items()->map({ _, val -> [val[0]->split('\zs'),
+        \ on_map->mapnew({ _, val -> [val[0]->split('\zs'),
         \       val[1]->dpp#util#_convert2list()]}) :
-        \ on_map->copy()->map({ _, val -> type(val) == v:t_list ?
+        \ on_map->mapnew({ _, val -> type(val) == v:t_list ?
         \       [val[0]->split('\zs'), val[1:]] :
         \       [['n', 'x', 'o'], [val]]
         \  })
