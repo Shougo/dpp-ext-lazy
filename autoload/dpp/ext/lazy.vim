@@ -297,7 +297,7 @@ function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
   let items =
         \ on_map->type() == v:t_string ? [[['n', 'x', 'o'], [on_map]]] :
         \ on_map->type() == v:t_dict ?
-        \ on_map->mapnew({ _, val -> [val[0]->split('\zs'),
+        \ on_map->items()->mapnew({ _, val -> [val[0]->split('\zs'),
         \       val[1]->dpp#util#_convert2list()]}) :
         \ on_map->mapnew({ _, val -> type(val) == v:t_list ?
         \       [val[0]->split('\zs'), val[1:]] :
