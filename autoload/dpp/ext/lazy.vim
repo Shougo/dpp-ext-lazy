@@ -96,8 +96,9 @@ function dpp#ext#lazy#_on_func(name) abort
   const function_prefix = a:name->substitute('[^#]*$', '', '')
   call dpp#source(dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
-        \   function_prefix->stridx(
-        \             val->dpp#util#_get_normalized_name() .. '#') == 0
+        \   function_prefix
+        \   ->stridx(val->dpp#util#_get_normalized_name()
+        \            ->substitute('-', '_', 'g') .. '#') == 0
         \   || val->get('on_func', [])
         \      ->dpp#util#_convert2list()
         \      ->index(a:name) == 0
