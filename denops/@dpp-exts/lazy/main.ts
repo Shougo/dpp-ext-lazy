@@ -33,6 +33,7 @@ const StateLines = [
   "if has('nvim')",
   "let g:dpp#ext#_on_lua_plugins = {}",
   "let g:dpp#ext#_called_lua = {}",
+  "let g:dpp#ext#_called_vim = {}",
   "lua <<END",
   "table.insert(package.loaders, 1, (function()",
   "  return function(mod_name)",

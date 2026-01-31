@@ -93,8 +93,16 @@ function dpp#ext#lazy#_on_func(name) abort
     return
   endif
 
+  const key = a:name->matchstr('^[^#]*', '', '')
+  if has_key(g:dpp#ext#_called_vim, key)
+    return
+  endif
+
+  " To prevent infinite loop.
+  let g:dpp#ext#_called_vim[key] = v:true
+
   const function_prefix = a:name->substitute('[^#]*$', '', '')
-  call dpp#source(dpp#util#_get_lazy_plugins()
+  let plugins = dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
         \   function_prefix
         \   ->stridx(val->dpp#util#_get_normalized_name()
@@ -102,7 +110,12 @@ function dpp#ext#lazy#_on_func(name) abort
         \   || val->get('on_func', [])
         \      ->dpp#util#_convert2list()
         \      ->index(a:name) == 0
-        \ }), function_prefix)
+        \ })
+  if plugins->empty()
+    return
+  endif
+
+  call dpp#source(plugins, function_prefix)
 endfunction
 
 function dpp#ext#lazy#_on_lua(name, mod_root) abort
