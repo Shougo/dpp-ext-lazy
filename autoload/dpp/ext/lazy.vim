@@ -119,12 +119,12 @@ function dpp#ext#lazy#_on_func(name) abort
 endfunction
 
 function dpp#ext#lazy#_on_lua(name, mod_root) abort
-  if g:dpp#ext#_called_lua->has_key(a:name)
+  if g:dpp#ext#_called_lua->has_key(a:mod_root)
     return
   endif
 
   " Prevent infinite loop
-  let g:dpp#ext#_called_lua[a:name] = v:true
+  let g:dpp#ext#_called_lua[a:mod_root] = v:true
 
   call dpp#source(dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
