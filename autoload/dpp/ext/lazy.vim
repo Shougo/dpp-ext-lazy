@@ -115,8 +115,8 @@ function dpp#ext#lazy#_on_func(name) abort
 
   " by_func_prefix: function_prefix starts with norm# (only when there is a #)
   if function_prefix !=# ''
-    const norm_key = a:name->matchstr('^[^#]\+')
-    for plugin in idx.by_func_prefix->get(norm_key, [])
+    const func_prefix_key = a:name->matchstr('^[^#]\+')
+    for plugin in idx.by_func_prefix->get(func_prefix_key, [])
       if !seen->has_key(plugin.name)
         let seen[plugin.name] = v:true
         call add(plugins, plugin)
@@ -168,8 +168,8 @@ function dpp#ext#lazy#_on_pre_cmd(command) abort
   endfor
 
   " Collect plugins matching by compact normalized name prefix
-  for [norm, plugin] in idx.cmd_prefix
-    if !seen->has_key(plugin.name) && lower_cmd->stridx(norm) == 0
+  for [cmd_prefix_key, plugin] in idx.cmd_prefix
+    if !seen->has_key(plugin.name) && lower_cmd->stridx(cmd_prefix_key) == 0
       let seen[plugin.name] = v:true
       call add(plugins, plugin)
     endif
@@ -308,11 +308,11 @@ function! s:build_index() abort
 
     " by_cmd (keyed by lowercased command name)
     for cmd in plugin->get('on_cmd', [])->dpp#util#_convert2list()
-      let lower = cmd->tolower()
-      if !idx.by_cmd->has_key(lower)
-        let idx.by_cmd[lower] = []
+      let lower_cmd = cmd->tolower()
+      if !idx.by_cmd->has_key(lower_cmd)
+        let idx.by_cmd[lower_cmd] = []
       endif
-      call add(idx.by_cmd[lower], plugin)
+      call add(idx.by_cmd[lower_cmd], plugin)
     endfor
 
     " by_lua (keyed by on_lua entry as-is, matching _on_lua's a:mod_root)
@@ -324,11 +324,11 @@ function! s:build_index() abort
     endfor
 
     " by_func_prefix: all plugins keyed by normalized name (hyphens→underscores)
-    let norm = plugin->dpp#util#_get_normalized_name()->substitute('-', '_', 'g')
-    if !idx.by_func_prefix->has_key(norm)
-      let idx.by_func_prefix[norm] = []
+    let func_prefix_norm = plugin->dpp#util#_get_normalized_name()->substitute('-', '_', 'g')
+    if !idx.by_func_prefix->has_key(func_prefix_norm)
+      let idx.by_func_prefix[func_prefix_norm] = []
     endif
-    call add(idx.by_func_prefix[norm], plugin)
+    call add(idx.by_func_prefix[func_prefix_norm], plugin)
 
     " by_func_name: keyed by on_func[0] (preserves original ->index()==0 semantics)
     let on_func_list = plugin->get('on_func', [])->dpp#util#_convert2list()
@@ -350,10 +350,10 @@ function! s:build_index() abort
       call add(idx.on_if, plugin)
     endif
 
-    " cmd_prefix: [compact_norm, plugin] pairs for prefix matching in _on_pre_cmd
-    let norm_compact = plugin->dpp#util#_get_normalized_name()
+    " cmd_prefix: [cmd_prefix_key, plugin] pairs for prefix matching in _on_pre_cmd
+    let cmd_prefix_key = plugin->dpp#util#_get_normalized_name()
           \ ->tolower()->substitute('[_-]', '', 'g')
-    call add(idx.cmd_prefix, [norm_compact, plugin])
+    call add(idx.cmd_prefix, [cmd_prefix_key, plugin])
   endfor
 
   let g:dpp#ext#lazy#index = idx
