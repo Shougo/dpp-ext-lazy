@@ -62,7 +62,8 @@ function s:source_events(event, plugins) abort
   endif
 
   const has_event = exists('##' .. a:event)
-  const already_sourced = g:dpp#ext#lazy#sourced_events->get(a:event, v:false)
+  const already_sourced = g:dpp#ext#lazy#sourced_events
+        \ ->get(a:event, v:false)
   const prev_autocmd = already_sourced ? ''
         \ : ('autocmd ' .. (has_event ? '' : 'User ') .. a:event)
         \   ->execute()
@@ -113,7 +114,8 @@ function dpp#ext#lazy#_on_func(name) abort
   let seen = {}
   let idx = s:get_index()
 
-  " by_func_prefix: function_prefix starts with norm# (only when there is a #)
+  " by_func_prefix: function_prefix starts with norm#
+  " (only when there is a #)
   if function_prefix !=# ''
     const func_prefix_key = a:name->matchstr('^[^#]\+')
     for plugin in idx.by_func_prefix->get(func_prefix_key, [])
@@ -124,7 +126,8 @@ function dpp#ext#lazy#_on_func(name) abort
     endfor
   endif
 
-  " by_func_name: on_func[0] == a:name (preserves original ->index() == 0 semantics)
+  " by_func_name: on_func[0] == a:name
+  " (preserves original ->index() == 0 semantics)
   for plugin in idx.by_func_name->get(a:name, [])
     if !seen->has_key(plugin.name)
       let seen[plugin.name] = v:true
@@ -323,14 +326,17 @@ function! s:build_index() abort
       call add(idx.by_lua[mod], plugin)
     endfor
 
-    " by_func_prefix: all plugins keyed by normalized name (hyphens→underscores)
-    let func_prefix_norm = plugin->dpp#util#_get_normalized_name()->substitute('-', '_', 'g')
+    " by_func_prefix: all plugins keyed by normalized name
+    " (hyphens -> underscores)
+    let func_prefix_norm = plugin->dpp#util#_get_normalized_name()
+          \ ->substitute('-', '_', 'g')
     if !idx.by_func_prefix->has_key(func_prefix_norm)
       let idx.by_func_prefix[func_prefix_norm] = []
     endif
     call add(idx.by_func_prefix[func_prefix_norm], plugin)
 
-    " by_func_name: keyed by on_func[0] (preserves original ->index()==0 semantics)
+    " by_func_name: keyed by on_func[0]
+    " (preserves original ->index()==0 semantics)
     let on_func_list = plugin->get('on_func', [])->dpp#util#_convert2list()
     if !on_func_list->empty()
       let func0 = on_func_list[0]
@@ -340,7 +346,8 @@ function! s:build_index() abort
       call add(idx.by_func_name[func0], plugin)
     endif
 
-    " on_path: plugins with on_path patterns (need runtime pattern matching)
+    " on_path: plugins with on_path patterns
+    " (need runtime pattern matching)
     if !plugin->get('on_path', [])->dpp#util#_convert2list()->empty()
       call add(idx.on_path, plugin)
     endif
@@ -350,7 +357,8 @@ function! s:build_index() abort
       call add(idx.on_if, plugin)
     endif
 
-    " cmd_prefix: [cmd_prefix_key, plugin] pairs for prefix matching in _on_pre_cmd
+    " cmd_prefix: [cmd_prefix_key, plugin]
+    " pairs for prefix matching in _on_pre_cmd
     let cmd_prefix_key = plugin->dpp#util#_get_normalized_name()
           \ ->tolower()->substitute('[_-]', '', 'g')
     call add(idx.cmd_prefix, [cmd_prefix_key, plugin])
