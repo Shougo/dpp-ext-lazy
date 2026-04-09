@@ -1,5 +1,5 @@
 function dpp#ext#lazy#_on_default_event(event) abort
-  let lazy_plugins = dpp#util#_get_lazy_plugins()
+  let idx = s:get_index()
   let plugins = []
 
   let path = '<afile>'->expand()
@@ -11,36 +11,35 @@ function dpp#ext#lazy#_on_default_event(event) abort
 
   const ft_list = &l:filetype ==# '' ? [] : &l:filetype->split('\.')
   if !ft_list->empty()
-    let plugins += lazy_plugins->copy()
-          \ ->filter({ _, val ->
-          \   !val->get('on_ft', [])
-          \   ->dpp#util#_convert2list()
-          \   ->filter({ _, ft -> ft_list->index(ft) >= 0 })->empty()
-          \ })
+    let ft_seen = {}
+    for ft in ft_list
+      for plugin in idx.by_ft->get(ft, [])
+        if !ft_seen->has_key(plugin.name)
+          let ft_seen[plugin.name] = v:true
+          call add(plugins, plugin)
+        endif
+      endfor
+    endfor
   endif
 
-  let plugins += lazy_plugins->copy()
-        \ ->filter({ _, val ->
-        \   !(val->get('on_path', [])->dpp#util#_convert2list()->copy()
-        \   ->filter({ _, val -> path =~? val })->empty())
-        \ })
-  let plugins += lazy_plugins
-        \ ->filter({ _, val ->
-        \   !(val->has_key('on_event')) && val->has_key('on_if')
-        \   && val.on_if->eval()
-        \ })
+  for plugin in idx.on_path
+    if !(plugin->get('on_path', [])->dpp#util#_convert2list()
+          \ ->filter({ _, p -> path =~? p })->empty())
+      call add(plugins, plugin)
+    endif
+  endfor
+  for plugin in idx.on_if
+    if plugin.on_if->eval()
+      call add(plugins, plugin)
+    endif
+  endfor
 
   call s:source_events(a:event, plugins)
 endfunction
 function dpp#ext#lazy#_on_event(event) abort
   const has_event = exists('##' .. a:event)
-  let lazy_plugins = dpp#util#_get_lazy_plugins()
-        \ ->filter({ _, val ->
-        \   val->get('on_event', [])
-        \   ->dpp#util#_convert2list()
-        \   ->index(a:event) >= 0
-        \ })
-  if lazy_plugins->empty()
+  let event_plugins = s:get_index().by_event->get(a:event, [])
+  if event_plugins->empty()
     if has_event
       execute 'autocmd! dpp-ext-lazy-on_event' a:event
     else
@@ -49,10 +48,12 @@ function dpp#ext#lazy#_on_event(event) abort
     return
   endif
 
-  let plugins = lazy_plugins
-        \ ->filter({ _, val ->
-        \   !(val->has_key('on_if')) || val.on_if->eval()
-        \ })
+  let plugins = []
+  for plugin in event_plugins
+    if !plugin->has_key('on_if') || plugin.on_if->eval()
+      call add(plugins, plugin)
+    endif
+  endfor
   call s:source_events(a:event, plugins)
 endfunction
 function s:source_events(event, plugins) abort
@@ -61,18 +62,20 @@ function s:source_events(event, plugins) abort
   endif
 
   const has_event = exists('##' .. a:event)
-  const prev_autocmd =
-        \ ('autocmd ' .. (has_event ? '' : 'User ') .. a:event)
-        \ ->execute()
+  const already_sourced = g:dpp#ext#lazy#sourced_events->get(a:event, v:false)
+  const prev_autocmd = already_sourced ? ''
+        \ : ('autocmd ' .. (has_event ? '' : 'User ') .. a:event)
+        \   ->execute()
 
   const sourced = dpp#source(a:plugins)
   if sourced->empty()
     return
   endif
 
-  const new_autocmd =
-        \ ('autocmd ' .. (has_event ? '' : 'User '))
-        \ ->execute()
+  let g:dpp#ext#lazy#sourced_events[a:event] = v:true
+
+  const new_autocmd = already_sourced ? ''
+        \ : ('autocmd ' .. (has_event ? '' : 'User '))->execute()
 
   if a:event ==# 'InsertCharPre'
     " Queue this key again
@@ -83,7 +86,8 @@ function s:source_events(event, plugins) abort
       " For BufReadCmd plugins
       silent! doautocmd <nomodeline> BufReadCmd
     endif
-    if ('#' .. a:event)->exists() && prev_autocmd !=# new_autocmd
+    if ('#' .. a:event)->exists()
+          \ && (already_sourced || prev_autocmd !=# new_autocmd)
       execute 'silent! doautocmd <nomodeline>' a:event
     elseif ('#User#' .. a:event)->exists()
       execute 'silent! doautocmd <nomodeline> User' a:event
@@ -105,15 +109,29 @@ function dpp#ext#lazy#_on_func(name) abort
   let g:dpp#ext#_called_vim[key] = v:true
 
   const function_prefix = a:name->substitute('[^#]*$', '', '')
-  let plugins = dpp#util#_get_lazy_plugins()
-        \ ->filter({ _, val ->
-        \   function_prefix
-        \   ->stridx(val->dpp#util#_get_normalized_name()
-        \            ->substitute('-', '_', 'g') .. '#') == 0
-        \   || val->get('on_func', [])
-        \      ->dpp#util#_convert2list()
-        \      ->index(a:name) == 0
-        \ })
+  let plugins = []
+  let seen = {}
+  let idx = s:get_index()
+
+  " by_func_prefix: function_prefix starts with norm# (only when there is a #)
+  if function_prefix !=# ''
+    const norm_key = a:name->matchstr('^[^#]\+')
+    for plugin in idx.by_func_prefix->get(norm_key, [])
+      if !seen->has_key(plugin.name)
+        let seen[plugin.name] = v:true
+        call add(plugins, plugin)
+      endif
+    endfor
+  endif
+
+  " by_func_name: on_func[0] == a:name (preserves original ->index() == 0 semantics)
+  for plugin in idx.by_func_name->get(a:name, [])
+    if !seen->has_key(plugin.name)
+      let seen[plugin.name] = v:true
+      call add(plugins, plugin)
+    endif
+  endfor
+
   if plugins->empty()
     return
   endif
@@ -129,12 +147,7 @@ function dpp#ext#lazy#_on_lua(name, mod_root) abort
   " Prevent infinite loop
   let g:dpp#ext#_called_lua[a:mod_root] = v:true
 
-  call dpp#source(dpp#util#_get_lazy_plugins()
-        \ ->filter({ _, val ->
-        \   val->get('on_lua', [])
-        \   ->dpp#util#_convert2list()
-        \   ->index(a:mod_root) >= 0
-        \ }))
+  call dpp#source(s:get_index().by_lua->get(a:mod_root, []))
 endfunction
 
 function dpp#ext#lazy#_on_pre_cmd(command) abort
@@ -143,17 +156,26 @@ function dpp#ext#lazy#_on_pre_cmd(command) abort
     silent! execute 'delcommand' a:command
   endif
 
-  call dpp#source(
-        \ dpp#util#_get_lazy_plugins()
-        \  ->filter({ _, val ->
-        \    val->get('on_cmd', [])
-        \    ->dpp#util#_convert2list()
-        \    ->mapnew({ _, val2 -> tolower(val2) })
-        \    ->index(a:command->tolower()) >= 0
-        \    || a:command->tolower()
-        \    ->stridx(val->dpp#util#_get_normalized_name()->tolower()
-        \    ->substitute('[_-]', '', 'g')) == 0
-        \  }))
+  const lower_cmd = a:command->tolower()
+  let idx = s:get_index()
+
+  " Collect plugins matching by exact on_cmd entry (O(1) lookup)
+  let seen = {}
+  let plugins = []
+  for plugin in idx.by_cmd->get(lower_cmd, [])
+    let seen[plugin.name] = v:true
+    call add(plugins, plugin)
+  endfor
+
+  " Collect plugins matching by compact normalized name prefix
+  for [norm, plugin] in idx.cmd_prefix
+    if !seen->has_key(plugin.name) && lower_cmd->stridx(norm) == 0
+      let seen[plugin.name] = v:true
+      call add(plugins, plugin)
+    endif
+  endfor
+
+  call dpp#source(plugins)
 endfunction
 
 function dpp#ext#lazy#_on_cmd(command, name, args, bang, line1, line2) abort
@@ -242,6 +264,100 @@ function dpp#ext#lazy#_on_root() abort
   endfor
 endfunction
 
+
+function! s:get_index() abort
+  if !exists('g:dpp#ext#lazy#index')
+    call s:build_index()
+  endif
+  return g:dpp#ext#lazy#index
+endfunction
+
+function! s:build_index() abort
+  if !exists('g:dpp#ext#lazy#sourced_events')
+    let g:dpp#ext#lazy#sourced_events = {}
+  endif
+
+  let idx = #{
+        \   by_event: {},
+        \   by_ft: {},
+        \   by_cmd: {},
+        \   by_lua: {},
+        \   by_func_prefix: {},
+        \   by_func_name: {},
+        \   on_path: [],
+        \   on_if: [],
+        \   cmd_prefix: [],
+        \ }
+
+  for plugin in dpp#util#_get_lazy_plugins()
+    " by_event
+    for event in plugin->get('on_event', [])->dpp#util#_convert2list()
+      if !idx.by_event->has_key(event)
+        let idx.by_event[event] = []
+      endif
+      call add(idx.by_event[event], plugin)
+    endfor
+
+    " by_ft
+    for ft in plugin->get('on_ft', [])->dpp#util#_convert2list()
+      if !idx.by_ft->has_key(ft)
+        let idx.by_ft[ft] = []
+      endif
+      call add(idx.by_ft[ft], plugin)
+    endfor
+
+    " by_cmd (keyed by lowercased command name)
+    for cmd in plugin->get('on_cmd', [])->dpp#util#_convert2list()
+      let lower = cmd->tolower()
+      if !idx.by_cmd->has_key(lower)
+        let idx.by_cmd[lower] = []
+      endif
+      call add(idx.by_cmd[lower], plugin)
+    endfor
+
+    " by_lua (keyed by on_lua entry as-is, matching _on_lua's a:mod_root)
+    for mod in plugin->get('on_lua', [])->dpp#util#_convert2list()
+      if !idx.by_lua->has_key(mod)
+        let idx.by_lua[mod] = []
+      endif
+      call add(idx.by_lua[mod], plugin)
+    endfor
+
+    " by_func_prefix: all plugins keyed by normalized name (hyphens→underscores)
+    let norm = plugin->dpp#util#_get_normalized_name()->substitute('-', '_', 'g')
+    if !idx.by_func_prefix->has_key(norm)
+      let idx.by_func_prefix[norm] = []
+    endif
+    call add(idx.by_func_prefix[norm], plugin)
+
+    " by_func_name: keyed by on_func[0] (preserves original ->index()==0 semantics)
+    let on_func_list = plugin->get('on_func', [])->dpp#util#_convert2list()
+    if !on_func_list->empty()
+      let func0 = on_func_list[0]
+      if !idx.by_func_name->has_key(func0)
+        let idx.by_func_name[func0] = []
+      endif
+      call add(idx.by_func_name[func0], plugin)
+    endif
+
+    " on_path: plugins with on_path patterns (need runtime pattern matching)
+    if !plugin->get('on_path', [])->dpp#util#_convert2list()->empty()
+      call add(idx.on_path, plugin)
+    endif
+
+    " on_if: plugins with on_if but without on_event
+    if !plugin->has_key('on_event') && plugin->has_key('on_if')
+      call add(idx.on_if, plugin)
+    endif
+
+    " cmd_prefix: [compact_norm, plugin] pairs for prefix matching in _on_pre_cmd
+    let norm_compact = plugin->dpp#util#_get_normalized_name()
+          \ ->tolower()->substitute('[_-]', '', 'g')
+    call add(idx.cmd_prefix, [norm_compact, plugin])
+  endfor
+
+  let g:dpp#ext#lazy#index = idx
+endfunction
 
 function! s:get_input() abort
   let input = ''
