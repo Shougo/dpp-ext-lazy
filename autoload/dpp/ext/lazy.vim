@@ -9,21 +9,22 @@ function dpp#ext#lazy#_on_default_event(event) abort
   endif
   let path = path->dpp#util#_expand()
 
-  for filetype in &l:filetype->split('\.')
+  const ft_list = &l:filetype ==# '' ? [] : &l:filetype->split('\.')
+  if !ft_list->empty()
     let plugins += lazy_plugins->copy()
           \ ->filter({ _, val ->
-          \   val->get('on_ft', [])
+          \   !val->get('on_ft', [])
           \   ->dpp#util#_convert2list()
-          \   ->index(filetype) >= 0
+          \   ->filter({ _, ft -> ft_list->index(ft) >= 0 })->empty()
           \ })
-  endfor
+  endif
 
   let plugins += lazy_plugins->copy()
         \ ->filter({ _, val ->
         \   !(val->get('on_path', [])->dpp#util#_convert2list()->copy()
         \   ->filter({ _, val -> path =~? val })->empty())
         \ })
-  let plugins += lazy_plugins->copy()
+  let plugins += lazy_plugins
         \ ->filter({ _, val ->
         \   !(val->has_key('on_event')) && val->has_key('on_if')
         \   && val.on_if->eval()
@@ -32,6 +33,7 @@ function dpp#ext#lazy#_on_default_event(event) abort
   call s:source_events(a:event, plugins)
 endfunction
 function dpp#ext#lazy#_on_event(event) abort
+  const has_event = exists('##' .. a:event)
   let lazy_plugins = dpp#util#_get_lazy_plugins()
         \ ->filter({ _, val ->
         \   val->get('on_event', [])
@@ -39,7 +41,7 @@ function dpp#ext#lazy#_on_event(event) abort
         \   ->index(a:event) >= 0
         \ })
   if lazy_plugins->empty()
-    if exists('##' .. a:event)
+    if has_event
       execute 'autocmd! dpp-ext-lazy-on_event' a:event
     else
       execute 'autocmd! dpp-ext-lazy-on_event User' a:event
@@ -47,7 +49,7 @@ function dpp#ext#lazy#_on_event(event) abort
     return
   endif
 
-  let plugins = lazy_plugins->copy()
+  let plugins = lazy_plugins
         \ ->filter({ _, val ->
         \   !(val->has_key('on_if')) || val.on_if->eval()
         \ })
@@ -58,8 +60,9 @@ function s:source_events(event, plugins) abort
     return
   endif
 
+  const has_event = exists('##' .. a:event)
   const prev_autocmd =
-        \ ('autocmd ' .. (exists('##' .. a:event) ? '' : 'User ') .. a:event)
+        \ ('autocmd ' .. (has_event ? '' : 'User ') .. a:event)
         \ ->execute()
 
   const sourced = dpp#source(a:plugins)
@@ -68,7 +71,7 @@ function s:source_events(event, plugins) abort
   endif
 
   const new_autocmd =
-        \ ('autocmd ' .. (exists('##' .. a:event) ? '' : 'User '))
+        \ ('autocmd ' .. (has_event ? '' : 'User '))
         \ ->execute()
 
   if a:event ==# 'InsertCharPre'
