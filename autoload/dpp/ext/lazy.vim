@@ -171,12 +171,16 @@ function dpp#ext#lazy#_on_pre_cmd(command) abort
   endfor
 
   " Collect plugins matching by compact normalized name prefix
-  for [cmd_prefix_key, plugin] in idx.cmd_prefix
-    if !seen->has_key(plugin.name) && lower_cmd->stridx(cmd_prefix_key) == 0
-      let seen[plugin.name] = v:true
-      call add(plugins, plugin)
-    endif
-  endfor
+  " Use the first-char map to avoid scanning the full prefix list
+  if !lower_cmd->empty()
+    const first = lower_cmd[0]
+    for [cmd_prefix_key, plugin] in idx.cmd_prefix_map->get(first, [])
+      if !seen->has_key(plugin.name) && lower_cmd->stridx(cmd_prefix_key) == 0
+        let seen[plugin.name] = v:true
+        call add(plugins, plugin)
+      endif
+    endfor
+  endif
 
   call dpp#source(plugins)
 endfunction
@@ -207,6 +211,8 @@ function dpp#ext#lazy#_on_cmd(command, name, args, bang, line1, line2) abort
 endfunction
 
 function dpp#ext#lazy#_on_map(mapping, name, mode) abort
+  const leader = g:->get('mapleader', '\')
+  const localleader = g:->get('maplocalleader', '\')
   const cnt = v:count > 0 ? v:count : ''
 
   const input = s:get_input()
@@ -236,10 +242,8 @@ function dpp#ext#lazy#_on_map(mapping, name, mode) abort
   else
     let mapping = a:mapping
     while mapping =~# '<[[:alnum:]_-]\+>'
-      let mapping = mapping->substitute('\c<Leader>',
-            \ g:->get('mapleader', '\'), 'g')
-      let mapping = mapping->substitute('\c<LocalLeader>',
-            \ g:->get('maplocalleader', '\'), 'g')
+      let mapping = mapping->substitute('\c<Leader>', leader, 'g')
+      let mapping = mapping->substitute('\c<LocalLeader>', localleader, 'g')
       let ctrl = mapping->matchstr('<\zs[[:alnum:]_-]\+\ze>')
       execute 'let mapping = mapping->substitute(
             \ "<' .. ctrl .. '>", "\<' .. ctrl .. '>", "")'
@@ -255,9 +259,7 @@ function dpp#ext#lazy#_on_map(mapping, name, mode) abort
 endfunction
 
 function dpp#ext#lazy#_on_root() abort
-  for plugin in dpp#util#_get_lazy_plugins()
-        \  ->filter({ _, val -> !val->get('on_root', [])->empty() })
-
+  for plugin in s:get_index().on_root
     for root in plugin.on_root->dpp#util#_convert2list()
       if !root->findfile(';')->empty()
         call dpp#source(plugin.name)
@@ -289,7 +291,9 @@ function! s:build_index() abort
         \   by_func_name: {},
         \   on_path: [],
         \   on_if: [],
+        \   on_root: [],
         \   cmd_prefix: [],
+        \   cmd_prefix_map: {},
         \ }
 
   for plugin in dpp#util#_get_lazy_plugins()
@@ -362,6 +366,19 @@ function! s:build_index() abort
     let cmd_prefix_key = plugin->dpp#util#_get_normalized_name()
           \ ->tolower()->substitute('[_-]', '', 'g')
     call add(idx.cmd_prefix, [cmd_prefix_key, plugin])
+    " cmd_prefix_map: keyed by first character for faster lookup
+    if !cmd_prefix_key->empty()
+      let cmd_prefix_first = cmd_prefix_key[0]
+      if !idx.cmd_prefix_map->has_key(cmd_prefix_first)
+        let idx.cmd_prefix_map[cmd_prefix_first] = []
+      endif
+      call add(idx.cmd_prefix_map[cmd_prefix_first], [cmd_prefix_key, plugin])
+    endif
+
+    " on_root: plugins with on_root entries
+    if !plugin->get('on_root', [])->dpp#util#_convert2list()->empty()
+      call add(idx.on_root, plugin)
+    endif
   endfor
 
   let g:dpp#ext#lazy#index = idx
