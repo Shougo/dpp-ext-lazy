@@ -379,6 +379,15 @@ function! s:build_index() abort
     if !plugin->get('on_root', [])->dpp#util#_convert2list()->empty()
       call add(idx.on_root, plugin)
     endif
+
+    " Precompute dummy commands and mappings
+    let dc = dpp#ext#lazy#_generate_dummy_commands(plugin)
+    let plugin.dummy_commands = dc.dummys
+    let plugin.dummy_command_state_lines = dc.stateLines
+
+    let dm = dpp#ext#lazy#_generate_dummy_mappings(plugin)
+    let plugin.dummy_mappings = dm.dummys
+    let plugin.dummy_mapping_state_lines = dm.stateLines
   endfor
 
   let g:dpp#ext#lazy#index = idx
@@ -423,6 +432,13 @@ function s:mapargrec(map, mode) abort
 endfunction
 
 function dpp#ext#lazy#_generate_dummy_commands(plugin) abort
+  if a:plugin->has_key('dummy_commands')
+    return #{
+          \   dummys: a:plugin.dummy_commands,
+          \   stateLines: a:plugin.dummy_command_state_lines,
+          \ }
+  endif
+
   let dummys = []
   let state_lines = []
 
@@ -446,7 +462,13 @@ function dpp#ext#lazy#_generate_dummy_commands(plugin) abort
         \ }
 endfunction
 function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
-  let state_lines = []
+  if a:plugin->has_key('dummy_mappings')
+    return #{
+          \   dummys: a:plugin.dummy_mappings,
+          \   stateLines: a:plugin.dummy_mapping_state_lines,
+          \ }
+  endif
+
   let dummys = []
   let state_lines = []
   const normalized_name = a:plugin->dpp#util#_get_normalized_name()
