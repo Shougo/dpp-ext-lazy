@@ -1,5 +1,5 @@
 function dpp#ext#lazy#_on_default_event(event) abort
-  let idx = s:get_index()
+  const idx = s:get_index()
   let plugins = []
 
   let path = '<afile>'->expand()
@@ -38,7 +38,7 @@ function dpp#ext#lazy#_on_default_event(event) abort
 endfunction
 function dpp#ext#lazy#_on_event(event) abort
   const has_event = exists('##' .. a:event)
-  let event_plugins = s:get_index().by_event->get(a:event, [])
+  const event_plugins = s:get_index().by_event->get(a:event, [])
   if event_plugins->empty()
     if has_event
       execute 'autocmd! dpp-ext-lazy-on_event' a:event
@@ -112,7 +112,7 @@ function dpp#ext#lazy#_on_func(name) abort
   const function_prefix = a:name->substitute('[^#]*$', '', '')
   let plugins = []
   let seen = {}
-  let idx = s:get_index()
+  const idx = s:get_index()
 
   " by_func_prefix: function_prefix starts with norm#
   " (only when there is a #)
@@ -160,7 +160,7 @@ function dpp#ext#lazy#_on_pre_cmd(command) abort
   endif
 
   const lower_cmd = a:command->tolower()
-  let idx = s:get_index()
+  const idx = s:get_index()
 
   " Collect plugins matching by exact on_cmd entry (O(1) lookup)
   let seen = {}
