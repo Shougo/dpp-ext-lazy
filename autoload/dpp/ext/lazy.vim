@@ -433,6 +433,7 @@ endfunction
 
 function dpp#ext#lazy#_generate_dummy_commands(plugin) abort
   if a:plugin->has_key('dummy_commands')
+        \ && a:plugin->has_key('dummy_command_state_lines')
     return #{
           \   dummys: a:plugin.dummy_commands,
           \   stateLines: a:plugin.dummy_command_state_lines,
@@ -463,6 +464,7 @@ function dpp#ext#lazy#_generate_dummy_commands(plugin) abort
 endfunction
 function dpp#ext#lazy#_generate_dummy_mappings(plugin) abort
   if a:plugin->has_key('dummy_mappings')
+        \ && a:plugin->has_key('dummy_mapping_state_lines')
     return #{
           \   dummys: a:plugin.dummy_mappings,
           \   stateLines: a:plugin.dummy_mapping_state_lines,
