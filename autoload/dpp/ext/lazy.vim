@@ -68,10 +68,18 @@ function s:source_events(event, plugins) abort
         \ : ('autocmd ' .. (has_event ? '' : 'User ') .. a:event)
         \   ->execute()
 
-  const sourced = dpp#source(a:plugins)
-  if sourced->empty()
-    return
-  endif
+  " Prevent autocommands from firing while sourcing plugins, which can
+  " otherwise call functions defined later in the file and cause E117.
+  const save_eventignore = &eventignore
+  let &eventignore = 'all'
+  try
+    const sourced = dpp#source(a:plugins)
+    if sourced->empty()
+      return
+    endif
+  finally
+    let &eventignore = l:save_eventignore
+  endtry
 
   let g:dpp#ext#lazy#sourced_events[a:event] = v:true
 
