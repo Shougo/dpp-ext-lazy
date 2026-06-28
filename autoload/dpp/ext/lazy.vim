@@ -195,27 +195,29 @@ function dpp#ext#lazy#_on_pre_cmd(command) abort
 endfunction
 
 function dpp#ext#lazy#_on_cmd(command, name, args, bang, line1, line2) abort
-  if (':' .. a:command)->exists() == 2
+  const check_command = ':' .. a:command
+
+  if check_command->exists() == 2
     " Remove the dummy command.
     silent! execute 'delcommand' a:command
   endif
 
   call dpp#source(a:name)
 
-  if (':' .. a:command)->exists() != 2
+  if check_command->exists() != 2
     call dpp#util#_error(printf('command %s is not found.', a:command))
     return
   endif
 
-  const range = (a:line1 == a:line2) ? '' :
-        \ (a:line1 == "'<"->line() && a:line2 == "'>"->line()) ?
+  const range = (a:line1 ==# a:line2) ? '' :
+        \ (a:line1 ==# "'<"->line() && a:line2 ==# "'>"->line()) ?
         \ "'<,'>" : a:line1 .. ',' .. a:line2
 
   try
-    execute range.a:command.a:bang a:args
+    execute (range .. a:command .. a:bang) a:args
   catch /^Vim\%((\a\+)\)\=:E481/
     " E481: No range allowed
-    execute a:command.a:bang a:args
+    execute (a:command .. a:bang) a:args
   endtry
 endfunction
 
