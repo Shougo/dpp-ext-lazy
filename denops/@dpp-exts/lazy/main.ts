@@ -37,7 +37,7 @@ const StateLines = [
   "lua <<END",
   "table.insert(package.loaders, 1, (function()",
   "  return function(mod_name)",
-  "    mod_root = string.match(mod_name, '^[^./]+')",
+  "    local mod_root = string.match(mod_name, '^[^./]+')",
   "    if vim.g['dpp#ext#_on_lua_plugins'][mod_root] then",
   "      vim.fn['dpp#ext#lazy#_on_lua'](mod_name, mod_root)",
   "    end",
