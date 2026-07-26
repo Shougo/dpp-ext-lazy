@@ -1,4 +1,9 @@
 function dpp#ext#lazy#_on_default_event(event) abort
+  if a:event ==# 'BufRead' && &l:buftype !=# ''
+    " Skip special buffers
+    return
+  endif
+
   const idx = s:get_index()
   let plugins = []
 
